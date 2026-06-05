@@ -11,7 +11,7 @@ messaging platform (e.g., iMessage, WhatsApp, Slack).
 
 Goal of the project : 
 
-1) Take a folder, with a deep learning model. 
+1) Take a folder, with a deep learning model. (model_input)
 2) extract the functions of the model 
 3) compare it with the documentation 
 4) produce a report on what is compatible and what is not
