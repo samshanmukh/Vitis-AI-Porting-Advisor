@@ -1,10 +1,17 @@
 # wire.py
 import asyncio
 import json
-from agents.agent_three_proposal_a import extract_model
-from agent_two_RAG import search_vitis_compatibility
-from agent_three_proposal_a import generate_conservative_proposal
-from agent_three_proposal_b import generate_aggressive_proposal
+import os
+import sys
+
+# Ensure the repository root is on sys.path when running this script directly.
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from agents.agent_three_proposal_a import extract_model, generate_conservative_proposal
+from agents.agent_two_RAG import search_vitis_compatibility
+from agents.agent_three_proposal_b import generate_aggressive_proposal
 
 async def main_pipeline(model_path: str) -> dict:
     """
