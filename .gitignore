@@ -1,2 +1,8 @@
 .rocketride/
 .env
+__pycache__/
+*.pyc
+vitis_docs_db/
+yolov8m.onnx
+yolov8m.pt
+analysis_result.json

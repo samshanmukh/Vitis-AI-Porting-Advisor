@@ -1,30 +1,37 @@
 # agent_one_modelExtractor.py
-import torch
 import onnx
 import json
+import os
 
 async def extract_model(input_data: dict) -> dict:
     """
     RocketRide agent: Extract model operations
-    
-    Input: {"model_path": "yolov8m.pt"}
+
+    Input: {"model_path": "yolov8m.onnx"}  (or .pt — will export to ONNX first)
     Output: {"operations": [...], "total_ops": 250, "model_name": "..."}
     """
-    
+
     model_path = input_data.get("model_path")
     if not model_path:
         return {"error": "model_path required"}
-    
+
     try:
-        # Your existing extraction logic
-        model = torch.load(model_path)
-        dummy_input = torch.randn(1, 3, 224, 224)
-        onnx_path = "temp.onnx"
-        torch.onnx.export(model, dummy_input, onnx_path)
-        
+        ext = os.path.splitext(model_path)[1].lower()
+
+        if ext == ".onnx":
+            onnx_path = model_path
+        elif ext == ".pt":
+            # Use existing .onnx if already exported alongside the .pt
+            onnx_path = os.path.splitext(model_path)[0] + ".onnx"
+            if not os.path.exists(onnx_path):
+                from ultralytics import YOLO
+                YOLO(model_path).export(format="onnx", imgsz=640, opset=12)
+        else:
+            return {"error": f"Unsupported file type: {ext}. Pass a .onnx or .pt file."}
+
         onnx_model = onnx.load(onnx_path)
         ops = []
-        
+
         for node in onnx_model.graph.node:
             ops.append({
                 "name": node.name,
@@ -32,14 +39,14 @@ async def extract_model(input_data: dict) -> dict:
                 "inputs": list(node.input),
                 "outputs": list(node.output),
             })
-        
+
         return {
             "model_name": model_path,
             "total_ops": len(ops),
             "operations": ops,
             "status": "success"
         }
-    
+
     except Exception as e:
         return {
             "error": str(e),
@@ -49,5 +56,5 @@ async def extract_model(input_data: dict) -> dict:
 # For local testing
 if __name__ == "__main__":
     import asyncio
-    result = asyncio.run(extract_model({"model_path": "yolov8m.pt"}))
+    result = asyncio.run(extract_model({"model_path": "yolov8m.onnx"}))
     print(json.dumps(result, indent=2))
