@@ -4,9 +4,8 @@ An AI-powered pipeline that analyses deep learning models for Xilinx DPU hardwar
 
 ---
 
-## Mandatory Project Requirements
+## Integrations
 
-- **RocketRide**: Core AI/data pipeline wired via RocketRide conventions in `agents/wire.py` — meaningfully connected to all 4 agent stages
 - **Butterbase**: AI Model Gateway (`https://api.butterbase.ai/v1`) for all LLM calls + REST database for persistent run history (`save_run` / `list_runs`)
 - **XTrace**: Memory API used by agents to write and read persistent analysis history
 - **Photon**: Agent delivered via `photon_send.mjs` messaging integration
@@ -117,9 +116,6 @@ python -m agents.wire yolov8m.onnx
 ### Butterbase
 - **AI Gateway**: All LLM calls route through `https://api.butterbase.ai/v1` (OpenAI-compatible), model `anthropic/claude-sonnet-4.6`
 - **Database**: `butterbase.py` — `save_run()` / `list_runs()` for persistent run history shown in the sidebar
-
-### RocketRide
-- Agent pipeline orchestrated via RocketRide conventions in `agents/wire.py`
 
 ---
 

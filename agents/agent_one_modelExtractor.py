@@ -5,7 +5,7 @@ import os
 
 async def extract_model(input_data: dict) -> dict:
     """
-    RocketRide agent: Extract model operations
+    Agent 1: Extract model operations
 
     Input: {"model_path": "yolov8m.onnx"}  (or .pt — will export to ONNX first)
     Output: {"operations": [...], "total_ops": 250, "model_name": "..."}

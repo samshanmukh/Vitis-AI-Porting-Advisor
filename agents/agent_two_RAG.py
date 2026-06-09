@@ -32,7 +32,7 @@ _PARTIAL_SUPPORT = {
 
 async def search_vitis_compatibility(input_data: dict) -> dict:
     """
-    RocketRide agent: Cross-reference ops against Vitis AI docs
+    Agent 2: Cross-reference ops against Vitis AI docs
 
     Input: {"operations": [...], "target_arch": "B4096"}
     Output: {"compatibility_report": [...], "unsupported_ops": [...], "op_summary": {...}}
