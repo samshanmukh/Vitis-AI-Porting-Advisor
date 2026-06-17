@@ -1,7 +1,7 @@
 [project]
-name = "agentic-ai-hackathon"
+name = "vitis-ai-porting-advisor"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered pipeline that analyses deep learning models for Xilinx DPU hardware compatibility and generates porting strategies."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
