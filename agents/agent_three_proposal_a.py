@@ -2,12 +2,7 @@
 import json
 import os
 from collections import Counter
-from openai import OpenAI
-
-client = OpenAI(
-    base_url="https://api.butterbase.ai/v1",
-    api_key=os.environ.get("BUTTERBASE_API_KEY", "bb_sk_1712fc41088ebdca35ee087d985d32e8a07c0c69"),
-)
+from agents.llm import get_llm
 
 SYSTEM_PROMPT = """\
 You are a Vitis AI hardware compatibility scanner and DPU deployment engineer.
@@ -127,8 +122,9 @@ Return ONLY this JSON (no markdown):
 }}
 """
 
+    client, model = get_llm()
     message = client.chat.completions.create(
-        model="anthropic/claude-sonnet-4.6",
+        model=model,
         max_tokens=4096,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
