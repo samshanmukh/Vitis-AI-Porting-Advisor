@@ -1,13 +1,109 @@
 """Home page — feature overview. Rendered via st.navigation in app.py."""
 import streamlit as st
+import streamlit.components.v1 as components
 
 from agents.llm import PROVIDERS
+
+# ── dynamic constellation background ────────────────────────────────────────
+# A canvas is injected behind the page content (z-index:-1). It twinkles a faint
+# starfield and cycles through zodiac shapes, fading one in/out at a time so the
+# connecting lines are visible but never dominate. Scoped to Home: the CSS below
+# makes .stApp transparent only on this page, so on other pages the opaque app
+# background covers the canvas.
+components.html("""
+<script>
+(function () {
+  const doc = window.parent.document;
+  if (doc.getElementById('cosmos-canvas')) return;   // already running
+
+  const cv = doc.createElement('canvas');
+  cv.id = 'cosmos-canvas';
+  cv.style.cssText =
+    'position:fixed;inset:0;width:100vw;height:100vh;z-index:-1;' +
+    'pointer-events:none;opacity:0.45;';
+  doc.body.style.background = '#0e1117';
+  doc.body.appendChild(cv);
+
+  const ctx = cv.getContext('2d');
+  let W, H, DPR;
+  function resize() {
+    DPR = window.parent.devicePixelRatio || 1;
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * DPR; cv.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.parent.addEventListener('resize', resize);
+  resize();
+
+  // faint static starfield
+  const bg = [];
+  for (let i = 0; i < 170; i++)
+    bg.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.1 + 0.3, ph: Math.random() * 6.28 });
+
+  // stylized zodiac / constellation patterns: stars (0-100 box) + edges to connect
+  const SIGNS = [
+    { s: [[12,55],[38,48],[62,44],[86,52]], e: [[0,1],[1,2],[2,3]] },                                         // Aries
+    { s: [[10,78],[34,58],[52,46],[72,34],[90,26],[58,60],[82,66]], e: [[0,1],[1,2],[2,3],[3,4],[2,5],[5,6]] }, // Taurus
+    { s: [[22,18],[30,46],[32,74],[60,16],[66,46],[68,76]], e: [[0,1],[1,2],[3,4],[4,5],[1,4]] },               // Gemini
+    { s: [[14,40],[30,30],[46,34],[50,52],[74,60],[88,50],[60,40]], e: [[0,1],[1,2],[2,3],[3,4],[4,5],[2,6],[6,5]] }, // Leo
+    { s: [[14,24],[26,30],[40,34],[54,42],[62,56],[58,70],[44,80],[30,78]], e: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7]] }, // Scorpius
+    { s: [[20,42],[40,34],[58,40],[50,60],[34,62],[74,28],[66,54]], e: [[0,1],[1,2],[2,3],[3,4],[4,0],[1,5],[2,6]] }, // Sagittarius
+    { s: [[50,12],[50,40],[50,70],[50,90],[22,46],[78,46]], e: [[0,1],[1,2],[2,3],[4,1],[1,5]] },               // Cygnus
+    { s: [[24,16],[76,20],[40,46],[52,50],[64,54],[28,84],[80,86]], e: [[0,2],[1,4],[2,3],[3,4],[2,5],[4,6]] },  // Orion
+  ];
+
+  const PERIOD = 7000, FADE = 1500, t0 = performance.now();
+  function draw(now) {
+    const t = now - t0;
+    ctx.clearRect(0, 0, W, H);
+
+    for (const s of bg) {
+      const a = 0.22 + 0.32 * Math.sin(t * 0.0011 + s.ph);
+      if (a <= 0) continue;
+      ctx.beginPath();
+      ctx.arc(s.x * W, s.y * H, s.r, 0, 6.283);
+      ctx.fillStyle = 'rgba(226,232,240,' + a + ')';
+      ctx.fill();
+    }
+
+    const sign = SIGNS[Math.floor(t / PERIOD) % SIGNS.length];
+    const tp = t % PERIOD;
+    let f = 1;
+    if (tp < FADE) f = tp / FADE;
+    else if (tp > PERIOD - FADE) f = (PERIOD - tp) / FADE;
+
+    const S = Math.min(W, H) * 0.42, cx = W * 0.5 - S / 2, cy = H * 0.42 - S / 2;
+    const pt = (p) => [cx + p[0] / 100 * S, cy + p[1] / 100 * S];
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(147,197,253,' + (0.55 * f) + ')';
+    for (const [a, b] of sign.e) {
+      const A = pt(sign.s[a]), B = pt(sign.s[b]);
+      ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+    }
+    for (let i = 0; i < sign.s.length; i++) {
+      const P = pt(sign.s[i]), tw = 0.7 + 0.3 * Math.sin(t * 0.004 + i);
+      ctx.beginPath(); ctx.arc(P[0], P[1], 4, 0, 6.283);
+      ctx.fillStyle = 'rgba(96,165,250,' + (f * 0.14) + ')'; ctx.fill();       // glow
+      ctx.beginPath(); ctx.arc(P[0], P[1], 1.8, 0, 6.283);
+      ctx.fillStyle = 'rgba(191,219,254,' + (f * tw) + ')'; ctx.fill();        // core
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+""", height=0)
 
 # ── shared card styling (each page run is independent, so inject here too) ──────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 footer { display: none !important; }
+/* let the constellation canvas (z-index:-1) show through on Home only */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stHeader"] { background: transparent !important; }
 .home-card {
   background: rgba(15,23,42,0.55);
   border: 1px solid rgba(51,65,85,0.45);
