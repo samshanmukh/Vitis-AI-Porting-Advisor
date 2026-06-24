@@ -145,6 +145,16 @@ st.markdown("""
 </p>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div style="border-left:3px solid #2563eb;background:rgba(37,99,235,0.08);
+            border-radius:0 10px 10px 0;padding:0.9rem 1.1rem;margin:0.25rem 0 1.25rem 0;max-width:760px;">
+  <p style="margin:0;font-size:1.0rem;line-height:1.5;color:#e2e8f0;">
+    The <strong>Vitis AI Model Zoo</strong> tells you which models <em>already</em> run on the DPU.
+    <span style="color:#93c5fd;font-weight:600;">We tell you why your model doesn't — and exactly what to change to fix it.</span>
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
 st.page_link("advisor.py", label="Open the Advisor  →", icon="🔬")
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -167,6 +177,44 @@ for col, (icon, title, desc) in zip(cols, stages):
             unsafe_allow_html=True,
         )
 
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ── where we sit in the Vitis AI flow ───────────────────────────────────────
+st.subheader("Where we sit in the Vitis AI flow")
+st.caption("We're **upstream** of AMD's toolchain — analysis & refactor advice — not duplicating the Optimizer/Quantizer/Compiler.")
+
+def _box(title, sub, kind):
+    if kind == "us":
+        style = ("background:linear-gradient(135deg,rgba(37,99,235,0.22),rgba(30,64,175,0.22));"
+                 "border:1px solid #2563eb;box-shadow:0 0 16px rgba(37,99,235,0.35);")
+        tcolor = "#bfdbfe"
+    elif kind == "amd":
+        style = "background:rgba(13,148,136,0.10);border:1px solid rgba(13,148,136,0.35);"
+        tcolor = "#5eead4"
+    else:
+        style = "background:rgba(15,23,42,0.55);border:1px solid rgba(51,65,85,0.45);"
+        tcolor = "#e2e8f0"
+    return (f'<div style="{style}border-radius:10px;padding:0.55rem 0.7rem;min-width:118px;text-align:center;">'
+            f'<div style="font-size:0.8rem;font-weight:700;color:{tcolor};">{title}</div>'
+            f'<div style="font-size:0.66rem;color:rgba(148,163,184,0.85);margin-top:2px;">{sub}</div></div>')
+
+_arrow = '<div style="display:flex;align-items:center;color:rgba(100,116,139,0.7);font-size:1.1rem;">→</div>'
+flow = _arrow.join([
+    _box("Your model", "PyTorch / ONNX", "in"),
+    _box("⭐ Porting Advisor", "analyse + refactor (us)", "us"),
+    _box("Optimizer", "prune", "amd"),
+    _box("Quantizer", "float → INT8", "amd"),
+    _box("Compiler", "→ .xmodel", "amd"),
+    _box("Deploy", "DPU · VART", "in"),
+])
+st.markdown(
+    f'<div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0.4rem;margin:0.25rem 0 0.6rem;">{flow}</div>',
+    unsafe_allow_html=True)
+st.markdown(
+    '<p style="font-size:0.74rem;color:rgba(100,116,139,0.85);margin:0 0 0.5rem;">'
+    '<span style="color:#5eead4;">●</span> Optimizer · Quantizer · Compiler = AMD Vitis AI toolchain &nbsp;·&nbsp; '
+    '<span style="color:#93c5fd;">●</span> we catch incompatibilities <em>before</em> the model ever enters it.</p>',
+    unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
 # ── features ────────────────────────────────────────────────────────────────

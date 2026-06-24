@@ -17,6 +17,8 @@ st.set_page_config(
 
 pages = [
     st.Page("home.py", title="Home", icon="🏠", default=True),
+    st.Page("repo_scan.py", title="Architecture Scan", icon="🧬"),
+    st.Page("structure.py", title="Structure Converter", icon="🔀"),
     st.Page("advisor.py", title="Advisor", icon="🔬"),
 ]
 
