@@ -9,3 +9,4 @@ analysis_result.json
 # generated scan/restructure artifacts
 scan_memory/
 restructured/
+verified/

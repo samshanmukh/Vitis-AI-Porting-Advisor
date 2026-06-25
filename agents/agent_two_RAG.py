@@ -30,6 +30,12 @@ _PARTIAL_SUPPORT = {
     "TopK":    "critical",
 }
 
+# Ops that map cleanly to the DPU — force "ok" over a noisy RAG lookup.
+_DPU_NATIVE = {
+    "Conv", "BatchNormalization", "Relu", "LeakyRelu", "MaxPool", "AveragePool",
+    "GlobalAveragePool", "Concat", "Add", "Mul", "Gemm", "HardSigmoid", "HardSwish",
+}
+
 async def search_vitis_compatibility(input_data: dict) -> dict:
     """
     Agent 2: Cross-reference ops against Vitis AI docs
@@ -79,6 +85,10 @@ async def search_vitis_compatibility(input_data: dict) -> dict:
             severity = _PARTIAL_SUPPORT.get(op_type, "ok" if is_supported else "critical")
             if not is_supported:
                 severity = "critical"
+
+            # Known DPU-native ops always map cleanly (wins over a noisy RAG lookup)
+            if op_type in _DPU_NATIVE:
+                is_supported, severity = True, "ok"
 
             type_info[op_type] = {
                 "supported": is_supported,
