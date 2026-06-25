@@ -20,6 +20,7 @@ pages = [
     st.Page("repo_scan.py", title="Architecture Scan", icon="🧬"),
     st.Page("structure.py", title="Structure Converter", icon="🔀"),
     st.Page("autofix.py", title="Auto-Fix & Verify", icon="✅"),
+    st.Page("multivendor.py", title="Multi-Vendor", icon="🏁"),
     st.Page("advisor.py", title="Advisor", icon="🔬"),
 ]
 
