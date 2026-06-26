@@ -138,10 +138,10 @@ st.markdown("""
     <h1 style="margin:0;padding:0;line-height:1.1;">Vitis AI Porting Advisor</h1>
   </div>
 </div>
-<p style="margin:0.5rem 0 1.75rem 0; color:rgba(148,163,184,0.95); font-size:0.95rem; max-width:760px;">
-  An AI pipeline that analyses a deep-learning model for <strong>Xilinx DPU</strong> hardware
-  compatibility and generates two concrete refactoring strategies — one conservative,
-  one aggressive INT8 — to maximise DPU subgraph coverage under Vitis&nbsp;AI&nbsp;3.x.
+<p style="margin:0.5rem 0 1.75rem 0; color:rgba(148,163,184,0.95); font-size:0.95rem; max-width:780px;">
+  Point it at any model repo and it tells you <strong>why your model won't run on the accelerator,
+  what to change, proves the fix by re-scanning</strong> — and compares
+  <strong>AMD&nbsp;DPU · NVIDIA&nbsp;TensorRT · Intel&nbsp;OpenVINO</strong> so you pick the right target.
 </p>
 """, unsafe_allow_html=True)
 
@@ -155,27 +155,32 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.page_link("advisor.py", label="Open the Advisor  →", icon="🔬")
-st.markdown("<br>", unsafe_allow_html=True)
+# ── the product: five tools, one workflow ───────────────────────────────────
+st.subheader("The workflow — five tools, one pipeline")
+st.caption("Each tab is a step. Run them in order for a full port, or jump straight to the one you need.")
 
-# ── how it works: 4-stage pipeline ──────────────────────────────────────────
-st.subheader("How it works")
-st.caption("Upload a YOLOv8 `.onnx` / `.pt` model, pick a DPU target, and run a 4-stage pipeline.")
-
-stages = [
-    ("🧩", "Model Extractor", "Traverses the ONNX graph and inventories every operator — names, types, and shapes."),
-    ("🔎", "RAG Compatibility", "Cross-references each op against a ChromaDB knowledge base of Vitis AI DPU specs (93 entries, 12 archs) → severity: ok / warning / critical."),
-    ("🛡️", "Conservative Proposal", "An LLM drafts a minimal-change porting strategy — accept a small CPU residual, maximise DPU coverage with low risk."),
-    ("🚀", "Aggressive INT8 Proposal", "A second LLM call produces a full INT8 deployment plan — subgraph map, calibration pipeline, latency & power estimates."),
+TOOLS = [
+    ("🧬", "1 · Architecture Scan", "repo_scan.py",
+     "**Why** it won't map. Scans your model's source and flags each incompatible op with the DPU rule + file:line."),
+    ("🔀", "2 · Structure Converter", "structure.py",
+     "**What** to change. Before→after restructure + DPU-coverage gain, stored & downloadable."),
+    ("✅", "3 · Auto-Fix & Verify", "autofix.py",
+     "**Proven** outcome. Applies safe fixes to a copy, re-scans, and *measures* the real coverage gain + patch."),
+    ("🏁", "4 · Multi-Vendor", "multivendor.py",
+     "**Which** target. Scores AMD DPU vs NVIDIA TensorRT vs Intel OpenVINO and recommends one."),
+    ("🔬", "5 · Advisor", "advisor.py",
+     "**Full** plan. ONNX op audit + conservative & aggressive INT8 porting proposals."),
 ]
-cols = st.columns(4)
-for col, (icon, title, desc) in zip(cols, stages):
+cols = st.columns(5)
+for col, (icon, title, page, desc) in zip(cols, TOOLS):
     with col:
         st.markdown(
-            f'<div class="home-card"><div style="font-size:1.5rem;margin-bottom:0.4rem;">{icon}</div>'
+            f'<div class="home-card" style="min-height:170px;">'
+            f'<div style="font-size:1.5rem;margin-bottom:0.4rem;">{icon}</div>'
             f'<h4>{title}</h4><p>{desc}</p></div>',
             unsafe_allow_html=True,
         )
+        st.page_link(page, label="Open →")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -217,8 +222,42 @@ st.markdown(
     unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ── features ────────────────────────────────────────────────────────────────
-st.subheader("Features")
+# ── why it's different (the value story) ────────────────────────────────────
+st.subheader("Why it's different")
+v1, v2, v3, v4 = st.columns(4)
+with v1:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🎯</div>
+      <h4>Analyzer → outcome</h4>
+      <p>We don't just diagnose — we apply the fix and re-measure. <strong>Estimated vs verified</strong>
+      coverage, side by side. Proof, not a promise.</p></div>
+    """, unsafe_allow_html=True)
+with v2:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🏁</div>
+      <h4>Vendor-neutral</h4>
+      <p>The only view that compares <strong>AMD · NVIDIA · Intel</strong> for <em>your</em> model.
+      No single vendor will ever tell you to use a competitor.</p></div>
+    """, unsafe_allow_html=True)
+with v3:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🔒</div>
+      <h4>IP-safe &amp; local</h4>
+      <p>Runs locally — your model never leaves. Source scan &amp; capture work <strong>offline with
+      no key</strong>; bring your own LLM key only for the AI explanations.</p></div>
+    """, unsafe_allow_html=True)
+with v4:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">⚡</div>
+      <h4>Upstream of the toolchain</h4>
+      <p>Catches incompatibilities <strong>before</strong> quantize/compile — killing the
+      trial-and-error loop teams burn weeks on with vendor tools.</p></div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ── under the hood ──────────────────────────────────────────────────────────
+st.subheader("Under the hood")
 
 f1, f2 = st.columns(2)
 with f1:
@@ -279,4 +318,5 @@ with g3:
     """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
-st.info("Head to the **Advisor** page (sidebar, or the button above) to run a scan.", icon="🔬")
+st.info("Start the demo on **🧬 Architecture Scan** — it runs offline on the bundled sample with no key.", icon="▶️")
+st.page_link("repo_scan.py", label="Start here  →", icon="🧬")
