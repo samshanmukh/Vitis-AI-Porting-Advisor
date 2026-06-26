@@ -5,3 +5,8 @@ vitis_docs_db/
 yolov8m.onnx
 yolov8m.pt
 analysis_result.json
+
+# generated scan/restructure artifacts
+scan_memory/
+restructured/
+verified/

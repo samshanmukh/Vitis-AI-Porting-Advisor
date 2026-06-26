@@ -138,39 +138,126 @@ st.markdown("""
     <h1 style="margin:0;padding:0;line-height:1.1;">Vitis AI Porting Advisor</h1>
   </div>
 </div>
-<p style="margin:0.5rem 0 1.75rem 0; color:rgba(148,163,184,0.95); font-size:0.95rem; max-width:760px;">
-  An AI pipeline that analyses a deep-learning model for <strong>Xilinx DPU</strong> hardware
-  compatibility and generates two concrete refactoring strategies — one conservative,
-  one aggressive INT8 — to maximise DPU subgraph coverage under Vitis&nbsp;AI&nbsp;3.x.
+<p style="margin:0.5rem 0 1.75rem 0; color:rgba(148,163,184,0.95); font-size:0.95rem; max-width:780px;">
+  Point it at any model repo and it tells you <strong>why your model won't run on the accelerator,
+  what to change, proves the fix by re-scanning</strong> — and compares
+  <strong>AMD&nbsp;DPU · NVIDIA&nbsp;TensorRT · Intel&nbsp;OpenVINO</strong> so you pick the right target.
 </p>
 """, unsafe_allow_html=True)
 
-st.page_link("advisor.py", label="Open the Advisor  →", icon="🔬")
-st.markdown("<br>", unsafe_allow_html=True)
+st.markdown("""
+<div style="border-left:3px solid #2563eb;background:rgba(37,99,235,0.08);
+            border-radius:0 10px 10px 0;padding:0.9rem 1.1rem;margin:0.25rem 0 1.25rem 0;max-width:760px;">
+  <p style="margin:0;font-size:1.0rem;line-height:1.5;color:#e2e8f0;">
+    The <strong>Vitis AI Model Zoo</strong> tells you which models <em>already</em> run on the DPU.
+    <span style="color:#93c5fd;font-weight:600;">We tell you why your model doesn't — and exactly what to change to fix it.</span>
+  </p>
+</div>
+""", unsafe_allow_html=True)
 
-# ── how it works: 4-stage pipeline ──────────────────────────────────────────
-st.subheader("How it works")
-st.caption("Upload a YOLOv8 `.onnx` / `.pt` model, pick a DPU target, and run a 4-stage pipeline.")
+# ── the product: five tools, one workflow ───────────────────────────────────
+st.subheader("The workflow — five tools, one pipeline")
+st.caption("Each tab is a step. Run them in order for a full port, or jump straight to the one you need.")
 
-stages = [
-    ("🧩", "Model Extractor", "Traverses the ONNX graph and inventories every operator — names, types, and shapes."),
-    ("🔎", "RAG Compatibility", "Cross-references each op against a ChromaDB knowledge base of Vitis AI DPU specs (93 entries, 12 archs) → severity: ok / warning / critical."),
-    ("🛡️", "Conservative Proposal", "An LLM drafts a minimal-change porting strategy — accept a small CPU residual, maximise DPU coverage with low risk."),
-    ("🚀", "Aggressive INT8 Proposal", "A second LLM call produces a full INT8 deployment plan — subgraph map, calibration pipeline, latency & power estimates."),
+TOOLS = [
+    ("🧬", "1 · Architecture Scan", "repo_scan.py",
+     "**Why** it won't map. Scans your model's source and flags each incompatible op with the DPU rule + file:line."),
+    ("🔀", "2 · Structure Converter", "structure.py",
+     "**What** to change. Before→after restructure + DPU-coverage gain, stored & downloadable."),
+    ("✅", "3 · Auto-Fix & Verify", "autofix.py",
+     "**Proven** outcome. Applies safe fixes to a copy, re-scans, and *measures* the real coverage gain + patch."),
+    ("🏁", "4 · Multi-Vendor", "multivendor.py",
+     "**Which** target. Scores AMD DPU vs NVIDIA TensorRT vs Intel OpenVINO and recommends one."),
+    ("🔬", "5 · Advisor", "advisor.py",
+     "**Full** plan. ONNX op audit + conservative & aggressive INT8 porting proposals."),
 ]
-cols = st.columns(4)
-for col, (icon, title, desc) in zip(cols, stages):
+cols = st.columns(5)
+for col, (icon, title, page, desc) in zip(cols, TOOLS):
     with col:
         st.markdown(
-            f'<div class="home-card"><div style="font-size:1.5rem;margin-bottom:0.4rem;">{icon}</div>'
+            f'<div class="home-card" style="min-height:170px;">'
+            f'<div style="font-size:1.5rem;margin-bottom:0.4rem;">{icon}</div>'
             f'<h4>{title}</h4><p>{desc}</p></div>',
             unsafe_allow_html=True,
         )
+        st.page_link(page, label="Open →")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ── features ────────────────────────────────────────────────────────────────
-st.subheader("Features")
+# ── where we sit in the Vitis AI flow ───────────────────────────────────────
+st.subheader("Where we sit in the Vitis AI flow")
+st.caption("We're **upstream** of AMD's toolchain — analysis & refactor advice — not duplicating the Optimizer/Quantizer/Compiler.")
+
+def _box(title, sub, kind):
+    if kind == "us":
+        style = ("background:linear-gradient(135deg,rgba(37,99,235,0.22),rgba(30,64,175,0.22));"
+                 "border:1px solid #2563eb;box-shadow:0 0 16px rgba(37,99,235,0.35);")
+        tcolor = "#bfdbfe"
+    elif kind == "amd":
+        style = "background:rgba(13,148,136,0.10);border:1px solid rgba(13,148,136,0.35);"
+        tcolor = "#5eead4"
+    else:
+        style = "background:rgba(15,23,42,0.55);border:1px solid rgba(51,65,85,0.45);"
+        tcolor = "#e2e8f0"
+    return (f'<div style="{style}border-radius:10px;padding:0.55rem 0.7rem;min-width:118px;text-align:center;">'
+            f'<div style="font-size:0.8rem;font-weight:700;color:{tcolor};">{title}</div>'
+            f'<div style="font-size:0.66rem;color:rgba(148,163,184,0.85);margin-top:2px;">{sub}</div></div>')
+
+_arrow = '<div style="display:flex;align-items:center;color:rgba(100,116,139,0.7);font-size:1.1rem;">→</div>'
+flow = _arrow.join([
+    _box("Your model", "PyTorch / ONNX", "in"),
+    _box("⭐ Porting Advisor", "analyse + refactor (us)", "us"),
+    _box("Optimizer", "prune", "amd"),
+    _box("Quantizer", "float → INT8", "amd"),
+    _box("Compiler", "→ .xmodel", "amd"),
+    _box("Deploy", "DPU · VART", "in"),
+])
+st.markdown(
+    f'<div style="display:flex;flex-wrap:wrap;align-items:stretch;gap:0.4rem;margin:0.25rem 0 0.6rem;">{flow}</div>',
+    unsafe_allow_html=True)
+st.markdown(
+    '<p style="font-size:0.74rem;color:rgba(100,116,139,0.85);margin:0 0 0.5rem;">'
+    '<span style="color:#5eead4;">●</span> Optimizer · Quantizer · Compiler = AMD Vitis AI toolchain &nbsp;·&nbsp; '
+    '<span style="color:#93c5fd;">●</span> we catch incompatibilities <em>before</em> the model ever enters it.</p>',
+    unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ── why it's different (the value story) ────────────────────────────────────
+st.subheader("Why it's different")
+v1, v2, v3, v4 = st.columns(4)
+with v1:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🎯</div>
+      <h4>Analyzer → outcome</h4>
+      <p>We don't just diagnose — we apply the fix and re-measure. <strong>Estimated vs verified</strong>
+      coverage, side by side. Proof, not a promise.</p></div>
+    """, unsafe_allow_html=True)
+with v2:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🏁</div>
+      <h4>Vendor-neutral</h4>
+      <p>The only view that compares <strong>AMD · NVIDIA · Intel</strong> for <em>your</em> model.
+      No single vendor will ever tell you to use a competitor.</p></div>
+    """, unsafe_allow_html=True)
+with v3:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">🔒</div>
+      <h4>IP-safe &amp; local</h4>
+      <p>Runs locally — your model never leaves. Source scan &amp; capture work <strong>offline with
+      no key</strong>; bring your own LLM key only for the AI explanations.</p></div>
+    """, unsafe_allow_html=True)
+with v4:
+    st.markdown("""
+    <div class="home-card"><div style="font-size:1.4rem;margin-bottom:0.3rem;">⚡</div>
+      <h4>Upstream of the toolchain</h4>
+      <p>Catches incompatibilities <strong>before</strong> quantize/compile — killing the
+      trial-and-error loop teams burn weeks on with vendor tools.</p></div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+# ── under the hood ──────────────────────────────────────────────────────────
+st.subheader("Under the hood")
 
 f1, f2 = st.columns(2)
 with f1:
@@ -231,4 +318,5 @@ with g3:
     """, unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
-st.info("Head to the **Advisor** page (sidebar, or the button above) to run a scan.", icon="🔬")
+st.info("Start the demo on **🧬 Architecture Scan** — it runs offline on the bundled sample with no key.", icon="▶️")
+st.page_link("repo_scan.py", label="Start here  →", icon="🧬")
