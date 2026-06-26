@@ -11,6 +11,7 @@ ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+from agents.repo_fetch import resolve_repo
 from agents.agent_repo_scanner import scan_repo
 from agents.agent_two_RAG import search_vitis_compatibility
 from agents.agent_observer import observe_and_capture
@@ -42,7 +43,9 @@ st.markdown("""
 # ── sidebar config ──────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("**Phase 1 · Repo Scan**")
-    repo_path = st.text_input("Model repo path", value="model_input/Transfer-Model_original")
+    source = st.text_input("GitHub repo URL (or local path)", value="https://github.com/owner/model-repo")
+    use_sample = st.checkbox("Use bundled sample repo (offline)", value=True,
+                             help="Scan the in-repo USSFCNet example instead of cloning.")
     target_arch = st.selectbox("Target DPU arch", DPU_ARCHS, index=DPU_ARCHS.index("B4096"))
 
     st.markdown("---")
@@ -52,17 +55,23 @@ with st.sidebar:
     api_key = st.text_input(f"{provider} API Key", type="password",
                             placeholder=PROVIDERS[provider]["key_prefix"])
 
-    run = st.button("▶  Scan architecture", type="primary", use_container_width=True,
-                    disabled=not os.path.isdir(repo_path))
-    if not os.path.isdir(repo_path):
-        st.caption("⚠️ path is not a directory")
+    run = st.button("▶  Scan architecture", type="primary", use_container_width=True)
 
 if not run:
-    st.info("Point at a PyTorch model repo (the default is the bundled USSFCNet example) and scan.", icon="🧬")
+    st.info("Paste a GitHub repo URL (a PyTorch model), or use the bundled USSFCNet sample, then scan.", icon="🧬")
     st.stop()
 
+# ── resolve repo (clone if URL) ─────────────────────────────────────────────
+src = "model_input/Transfer-Model_original" if use_sample else source
+with st.spinner("Resolving repo…"):
+    resolved = resolve_repo(src)
+if resolved.get("error"):
+    st.error(f"Could not load repo: {resolved['error']}")
+    st.stop()
+st.success(f"Loaded **{resolved['name']}** ({resolved['origin']}) → scanning architecture…", icon="📦")
+
 # ── 1. static scan (deterministic) ──────────────────────────────────────────
-scan = scan_repo({"repo_path": repo_path})
+scan = scan_repo({"repo_path": resolved["path"]})
 if scan.get("error"):
     st.error(f"Scan failed: {scan['error']}")
     st.stop()
