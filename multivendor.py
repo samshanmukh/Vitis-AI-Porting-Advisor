@@ -10,6 +10,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from agents.repo_fetch import resolve_repo
+from agents.repo_input import repo_source_input
 from agents.agent_repo_scanner import scan_repo
 from agents.agent_vendor_compat import compare_vendors
 
@@ -36,15 +37,13 @@ st.markdown("""
 
 with st.sidebar:
     st.markdown("**Multi-Vendor**")
-    source = st.text_input("GitHub repo URL (or local path)", value="https://github.com/owner/model-repo")
-    use_sample = st.checkbox("Use bundled sample repo (offline)", value=True)
+    src = repo_source_input()
     run = st.button("▶  Compare targets", type="primary", use_container_width=True)
 
 if not run:
     st.info("Scan a model and compare how it maps onto each vendor's accelerator.", icon="🏁")
     st.stop()
 
-src = "model_input/Transfer-Model_original" if use_sample else source
 with st.spinner("Resolving & scanning…"):
     resolved = resolve_repo(src)
     if resolved.get("error"):
