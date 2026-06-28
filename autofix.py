@@ -10,6 +10,7 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from agents.repo_fetch import resolve_repo
+from agents.repo_input import repo_source_input
 from agents.agent_repo_scanner import scan_repo
 from agents.agent_two_RAG import search_vitis_compatibility
 from agents.agent_observer import observe_and_capture
@@ -39,9 +40,8 @@ st.markdown("""
 
 with st.sidebar:
     st.markdown("**Auto-Fix & Verify**")
-    source = st.text_input("GitHub repo URL (or local path)", value="https://github.com/owner/model-repo")
+    src = repo_source_input()
     target_arch = st.selectbox("Target DPU arch", DPU_ARCHS, index=DPU_ARCHS.index("B4096"))
-    use_sample = st.checkbox("Use bundled sample repo (offline)", value=True)
     run = st.button("▶  Auto-fix & verify", type="primary", use_container_width=True)
 
 if not run:
@@ -50,7 +50,6 @@ if not run:
     st.stop()
 
 # ── resolve repo ────────────────────────────────────────────────────────────
-src = "model_input/Transfer-Model_original" if use_sample else source
 with st.spinner("Resolving repo…"):
     resolved = resolve_repo(src)
 if resolved.get("error"):
